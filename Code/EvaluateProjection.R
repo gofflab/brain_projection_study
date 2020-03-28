@@ -21,15 +21,7 @@ findStructureAnnotation<-function(x,group){
   }else{
     return(str.list[max1])
   }
-  
-#  k<-wilcox.test(c(as.numeric(unlist(cor.list[max1])),as.numeric(unlist(cor.list[max2]))),c(rep(1,length(as.numeric(unlist(cor.list[max1])))),rep(2,length(as.numeric(unlist(cor.list[max2]))))))
-  
-#  if(k$p.value<0.05){
-#   return(str.list[max1])
-# }else{
-#    return("Can't distinguish") 
-# }
-}
+ 
 
 ## x: projectR$projection
 ## y: NNMF$H
