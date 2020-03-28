@@ -16,17 +16,19 @@ library(viridisLite)
 source("./code/EvaluateProjection.R")
 source("./code/myColorRamp.R")
 ```
-
+```{r }
+load("/Users/25149/Documents/JHU/Rotation/Dr.Goff/new_dev_v3/p56coord_dev_v3_left.RData")
+```
 
 ```{r }
 load("/Users/25149/Documents/JHU/Rotation/Dr.Goff/new_dev_v3/imputation/CoGAPS_Lognorm/Energy_imputed_lognorm_CoGAPS120.RData")
 load("/Users/25149/Documents/JHU/Rotation/Dr.Goff/new_dev_v3/conserved pattern/group.RData")
-load("/Users/25149/Documents/JHU/Rotation/Dr.Goff/new_dev_v3/p56coord_dev_v3_left.RData")
 
 xlim=c(0,max(coord_annotation_dev_v3_left))
 ylim=xlim
 zlim=ylim
 ```
+
 
 ```{r}
 ## read in normalized data -visual cortex
