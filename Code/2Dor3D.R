@@ -21,7 +21,6 @@ Distinguish2Dor3D<-function(pattern, row = TRUE, z, k = 9 ){
    x <- quantile(m[p,])[c(2,4)]
   
    #calculate the critical value for numeric outlier
-   # k = 2.5-9.5 is a good value 
    c <- (x[2]-x[1])*k
   
    #find outlier, if outlier is found, the pattern is 2D, assgin 2 to result. if not found, pattern is 3D, assign 3 to result.
