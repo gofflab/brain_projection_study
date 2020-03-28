@@ -13,8 +13,8 @@ library(projectR)
 library(magick)
 library(plotrix)
 library(viridisLite)
-source("/Users/25149/Documents/JHU/Rotation/Dr.Goff/new_dev_v3/conserved pattern/EvaluateProjection.R")
-source("/Users/25149/Documents/JHU/Rotation/Dr.Goff/new_dev_v3/conserved pattern/myColorRamp.R")
+source("../Code/EvaluateProjection.R")
+source("../Code/myColorRamp.R")
 ```
 
 ## R Markdown
