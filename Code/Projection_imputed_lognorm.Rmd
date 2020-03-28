@@ -1,0 +1,147 @@
+---
+title: "Projection_imputed_lognorm_energy"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(NNLM)
+library(rgl)
+library(dplyr)
+library(Seurat)
+library(projectR)
+library(magick)
+library(plotrix)
+library(viridisLite)
+source("/Users/25149/Documents/JHU/Rotation/Dr.Goff/new_dev_v3/conserved pattern/EvaluateProjection.R")
+source("/Users/25149/Documents/JHU/Rotation/Dr.Goff/new_dev_v3/conserved pattern/myColorRamp.R")
+```
+
+
+```{r }
+load("/Users/25149/Documents/JHU/Rotation/Dr.Goff/new_dev_v3/imputation/CoGAPS_Lognorm/Energy_imputed_lognorm_CoGAPS120.RData")
+load("/Users/25149/Documents/JHU/Rotation/Dr.Goff/new_dev_v3/conserved pattern/group.RData")
+load("/Users/25149/Documents/JHU/Rotation/Dr.Goff/new_dev_v3/p56coord_dev_v3_left.RData")
+
+xlim=c(0,max(coord_annotation_dev_v3_left))
+ylim=xlim
+zlim=ylim
+```
+
+```{r}
+## read in normalized data -visual cortex
+projected_data_norm<-read.csv("/Users/25149/Documents/JHU/Rotation/Dr.Goff/projection/visual cortex/GSE71585_RefSeq_TPM.csv")
+visual_genes<-projected_data_norm[,1]
+names(visual_genes)<-NULL
+projected_data_norm<-data.matrix(projected_data_norm[,-1])
+rownames(projected_data_norm)<-visual_genes
+
+## projectR-CoGAPS
+
+visual_projection<-projectR(projected_data_norm,loadings = Energy_imputed_lognorm_CoGAPS120@featureLoadings,full=TRUE)
+
+## poltting random cell-CoGAPS
+random_cell<-sample(1:ncol(visual_projection$projection),1)
+random_cell_name<-colnames(visual_projection$projection)[random_cell]
+
+open3d()
+par3d(windowRect = c(20, 30, 1200, 1200))
+cor<-cor(t(Energy_imputed_lognorm_CoGAPS120@sampleFactors),visual_projection$projection[,random_cell])
+plot3d(coord_annotation_dev_v3_left,col=myColorRamp(inferno(100),cor),size=3,box=F,axes=F,xlab="",ylab="", zlab="",xlim=xlim,ylim=ylim,zlim=zlim, main=random_cell_name, alpha=(cor-min(cor))/(max(cor)-min(cor)))
+
+bgplot3d( suppressWarnings (fields::image.plot( legend.only=TRUE, nlevel=100,zlim=c(min(cor),max(cor)), legend.args=list(text=''),col=inferno(100))))
+
+## Evaluation
+e1<-EvaluateProjection(visual_projection$projection,t(Energy_imputed_lognorm_CoGAPS120@sampleFactors),group,allzero = c())
+summary(as.factor(e1))
+```
+
+```{r}
+## load stratium data
+stratium<-read.csv(file = "/Users/25149/Documents/JHU/Rotation/Dr.Goff/projection/stratium/GSE82187_cast_all_forGEO.csv")
+stratium_genes<-colnames(stratium)[-(1:5)]
+stratium<-t(stratium[,-(1:5)])%>%as.matrix()
+
+##projectR-CoGAPS
+stratium_projection<-projectR(stratium,loadings=Energy_imputed_lognorm_CoGAPS120@featureLoadings,full=TRUE)
+
+## plotting random cell-CoGAPS
+random_cell<-sample(1:ncol(stratium_projection$projection),1)
+random_cell_name<-colnames(stratium_projection$projection)[random_cell]
+
+open3d()
+par3d(windowRect = c(20, 30, 1200, 1200))
+cor<-cor(t(Energy_imputed_lognorm_CoGAPS120@sampleFactors),stratium_projection$projection[,random_cell])
+plot3d(coord_annotation_dev_v3_left,col=myColorRamp(inferno(100),cor),size=3,box=F,axes=F,xlab="",ylab="",zlab="",xlim=xlim,ylim=ylim,zlim=zlim, main=random_cell_name,alpha=(cor-min(cor))/(max(cor)-min(cor)))
+
+bgplot3d( suppressWarnings (fields::image.plot( legend.only=TRUE, nlevel=100,zlim=c(min(cor),max(cor)), legend.args=list(text=''),col=inferno(100))))
+
+e.str<-EvaluateProjection(stratium_projection$projection,t(Energy_imputed_lognorm_CoGAPS120@sampleFactors),group,allzero = c())
+summary(as.factor(e.str))
+```
+
+```{r}
+### load hypothalamus data
+load("/Users/25149/Documents/JHU/Rotation/Dr.Goff/projection/hypothalamus/GSE87544_1443737Cells.Expresssion.Matrix.log_tpm+1_.renamed.RData/GSE87544_1443737Cells.Expresssion.Matrix.log_tpm+1_.renamed.RData")
+cell_names<-colnames(Expresssion_Matrix_unfiltered)
+Expression_B1<- Expresssion_Matrix_unfiltered[,which(grepl("B1",cell_names))]
+cell_names<-colnames(Expression_B1)
+Expression_B1_Normal<-Expression_B1[,which(grepl("Normal",cell_names))]
+Expression_B1_Normal<-as.matrix(Expression_B1_Normal)
+
+## projectR
+hypothalamus_projection<-projectR(Expression_B1_Normal,loadings = Energy_imputed_lognorm_CoGAPS120@featureLoadings,full=TRUE)
+
+## plotting random cell
+random_cell<-sample(1:ncol(hypothalamus_projection$projection),1)
+random_cell_name<-colnames(hypothalamus_projection$projection)[random_cell]
+
+open3d()
+par3d(windowRect = c(20, 30, 1200, 1200))
+cor<-cor(t(Energy_imputed_lognorm_CoGAPS120@sampleFactors),hypothalamus_projection$projection[,random_cell])
+plot3d(coord_annotation_dev_v3_left,col=myColorRamp(inferno(100),cor),size=3,box=F,axes=F,xlab="",ylab="",zlab="",xlim=xlim,ylim=ylim,zlim=zlim, main=random_cell_name,alpha=(cor-min(cor))/(max(cor)-min(cor)))
+
+bgplot3d( suppressWarnings (fields::image.plot( legend.only=TRUE, nlevel=100,zlim=c(min(cor),max(cor)), legend.args=list(text=''),col=inferno(100))))
+
+##
+e.hyp<-EvaluateProjection(hypothalamus_projection$projection,t(Energy_imputed_lognorm_CoGAPS120@sampleFactors),group,allzero = c())
+summary(as.factor(e.hyp))
+```
+
+```{r}
+## import hindbrain data
+library(Seurat)
+hind<-Read10X(data.dir = "/Users/25149/Documents/JHU/Rotation/Dr.Goff/projection/cerebellum/")
+hind.s<- CreateSeuratObject(counts = hind, project = "hindsvm", min.cells = 3, min.features = 200)
+#hind.s<- NormalizeData(hind.s, normalization.method = "LogNormalize", scale.factor = 500)
+hind<-as.matrix(hind.s@assays$RNA@data)
+
+
+## projectR
+hind_projection<-projectR(hind,loadings = Energy_imputed_lognorm_CoGAPS120@featureLoadings, full=TRUE)
+
+## plotting random cell
+random_cell<-sample(1:ncol(hind_projection$projection),1)
+random_cell_name<-colnames(hind_projection$projection)[random_cell]
+
+open3d()
+par3d(windowRect = c(20, 30, 1200, 1200))
+cor<-cor(t(Energy_imputed_lognorm_CoGAPS120@sampleFactors),hind_projection$projection[,random_cell])
+plot3d(coord_annotation_dev_v3_left,col=myColorRamp(inferno(100),cor),size=3,box=F,axes=F,xlab="",ylab="",zlab="",xlim=xlim,ylim=ylim,zlim=zlim, main=random_cell_name,alpha=(cor-min(cor))/(max(cor)-min(cor)))
+
+bgplot3d( suppressWarnings (fields::image.plot( legend.only=TRUE, nlevel=100,zlim=c(min(cor),max(cor)), legend.args=list(text=''),col=inferno(100))))
+
+##
+e.hin<-EvaluateProjection(hind_projection$projection,t(Energy_imputed_lognorm_CoGAPS120@sampleFactors),group,allzero = c())
+summary(as.factor(e.hin))
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
