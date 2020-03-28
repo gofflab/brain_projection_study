@@ -13,13 +13,8 @@ library(projectR)
 library(magick)
 library(plotrix)
 library(viridisLite)
+library(e1071)
 ```
-
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
 ```{r }
 load("/Users/25149/Documents/JHU/Rotation/Dr.Goff/new_dev_v3/EnergyMatrix/energy_dev_v3_sagittal.RData")
@@ -28,51 +23,25 @@ energy.annot<-energy.mat[,coordID_annotation_dev_v3_left]
 #energy.annot[energy.annot==-1]<-0
 #energy.log<-log10(energy.annot+1)
 energy.lognorm<-LogNormalize(energy.annot)%>%as.matrix()
-#energy.norm<-scale(energy.annot,center = FALSE, scale = colSums(energy.annot))
-
-
-### normalize voxels
-#energy.voxel.norm<-scale(t(energy.annot),center=FALSE,scale=colSums(t(energy.annot)))%>%t()
-#energy.voxel.lognorm<-log(t(energy.voxel.norm)+1)%>%t()
 ```
 
 ```{r}
 ## CoGAPs
+params<-new("CogapsParams")
+params<-setParam(params,"nPatterns",120)
+lognorm_Cogaps_120<-CoGAPS(energy.lognorm,params,nIterations=1000)
 Cogaps<-lognorm_Cogaps_120
 ```
 
 
 ```{r }
-## NNMF 40
+## NNMF 120
 set.seed(520)
-NNMF40.1<-nnmf(energy.lognorm, k=40)
+NNMF120.1<-nnmf(energy.lognorm, k=120)
 set.seed(1314)
-NNMF40.2<-nnmf(energy.lognorm,k=40)
+NNMF120.2<-nnmf(energy.lognorm,k=120)
 set.seed(618)
-NNMF40.3<-nnmf(energy.lognorm,k=40)
-
-## NNMF 60
-set.seed(520)
-NNMF60.1<-nnmf(energy.lognorm,k=60)
-set.seed(1314)
-NNMF60.2<-nnmf(energy.annot,k=60)
-set.seed(618)
-NNMF60.3<-nnmf(energy.annot,k=60)
-
-## NNMF 80
-set.seed(520)
-NNMF80.1<-nnmf(energy.annot,k=80)
-set.seed(1314)
-NNMF80.2<-nnmf(energy.annot,k=80)
-set.seed(618)
-NNMF80.3<-nnmf(energy.annot,k=80)
-
-## NNMF100
-set.seed(520)
-NNMF100.1<-nnmf(energy.lognorm,k=100)
-bp<-c(1,3,4,5,8,9,11,19,25,27,28,31,32,41,45,47,48,49,51,52,53,55,58,59,60,63,66,67,68,69,74,75,76,79,81,83,84,85,86,88,90,91,92,95,96)
-
-
+NNMF120.3<-nnmf(energy.lognorm,k=120)
 
 ### find common patterns
 r12<-psych::corr.test(x=as.matrix(t(NNMF120.1$H)),y=as.matrix(t(NNMF120.2$H)),ci=FALSE)
@@ -93,16 +62,13 @@ s123<-intersect(s12,s13)
 allzero<-which(colSums(NNMF120.1$H[s123,])==0)
 ```
 
-
-
-
 ```{r}
 ## geometry data
 xlim=c(0,max(coord_annotation_dev_v3_left))
 ylim=xlim
 zlim=ylim
 
-#### NNMF
+#### plotting NNMF patterns
 open3d()
 
 par3d(windowRect = c(20, 30, 1200, 1200))
@@ -121,7 +87,7 @@ for (i in 101:120) {
 }
 
 
-### CoGAPS
+### plotting CoGAPS patterns
 open3d()
 
 par3d(windowRect = c(20, 30, 1200, 1200))
@@ -140,7 +106,7 @@ for (i in 1:20) {
 }
 
 
-### pattern gif
+### Creating gif of patterns
 par3d(windowRect = c(20, 30, 1200, 1200))
 plot3d(coord_annotation_dev_v3_left,col=myColorRamp(inferno(100),NNMF120.1$H[1,]),size=3,box=F,axes=F,xlab="",ylab="",zlab="",xlim=xlim,ylim=ylim,zlim=zlim, main=1, alpha=(NNMF120.1$H[1,]-min(NNMF120.1$H[1,]))/(max(NNMF120.1$H[1,])-min(NNMF120.1$H[1,])))
 movie3d(spin3d(axis = c(1, 1, 1), rpm = 5),duration = 10,movie = paste0("NNMF120",".1","Pattern", as.character(1)),dir = "/Users/25149/Documents/JHU/Rotation/Dr.Goff/new_dev_v3/conserved pattern/lognorm_NNMF/plots", convert= NULL)
