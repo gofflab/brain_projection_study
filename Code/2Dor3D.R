@@ -1,4 +1,4 @@
-Distinguish2Dor3D<-function(pattern, row = TRUE, z, k = 3.5 ){
+Distinguish2Dor3D<-function(pattern, row = TRUE, z, k = 9 ){
   
  if(row == FALSE){
    pattern <- t(pattern)
