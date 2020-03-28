@@ -1,0 +1,484 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(NNLM)
+library(rgl)
+library(dplyr)
+library(Seurat)
+library(projectR)
+library(magick)
+library(plotrix)
+library(viridisLite)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r }
+load("/Users/25149/Documents/JHU/Rotation/Dr.Goff/new_dev_v3/EnergyMatrix/energy_dev_v3_sagittal.RData")
+load("/Users/25149/Documents/JHU/Rotation/Dr.Goff/new_dev_v3/p56coord_dev_v3_left.RData")
+energy.annot<-energy.mat[,coordID_annotation_dev_v3_left]
+#energy.annot[energy.annot==-1]<-0
+#energy.log<-log10(energy.annot+1)
+energy.lognorm<-LogNormalize(energy.annot)%>%as.matrix()
+#energy.norm<-scale(energy.annot,center = FALSE, scale = colSums(energy.annot))
+
+
+### normalize voxels
+#energy.voxel.norm<-scale(t(energy.annot),center=FALSE,scale=colSums(t(energy.annot)))%>%t()
+#energy.voxel.lognorm<-log(t(energy.voxel.norm)+1)%>%t()
+```
+
+```{r}
+## CoGAPs
+Cogaps<-lognorm_Cogaps_120
+```
+
+
+```{r }
+## NNMF 40
+set.seed(520)
+NNMF40.1<-nnmf(energy.lognorm, k=40)
+set.seed(1314)
+NNMF40.2<-nnmf(energy.lognorm,k=40)
+set.seed(618)
+NNMF40.3<-nnmf(energy.lognorm,k=40)
+
+## NNMF 60
+set.seed(520)
+NNMF60.1<-nnmf(energy.lognorm,k=60)
+set.seed(1314)
+NNMF60.2<-nnmf(energy.annot,k=60)
+set.seed(618)
+NNMF60.3<-nnmf(energy.annot,k=60)
+
+## NNMF 80
+set.seed(520)
+NNMF80.1<-nnmf(energy.annot,k=80)
+set.seed(1314)
+NNMF80.2<-nnmf(energy.annot,k=80)
+set.seed(618)
+NNMF80.3<-nnmf(energy.annot,k=80)
+
+## NNMF100
+set.seed(520)
+NNMF100.1<-nnmf(energy.lognorm,k=100)
+bp<-c(1,3,4,5,8,9,11,19,25,27,28,31,32,41,45,47,48,49,51,52,53,55,58,59,60,63,66,67,68,69,74,75,76,79,81,83,84,85,86,88,90,91,92,95,96)
+
+
+
+### find common patterns
+r12<-psych::corr.test(x=as.matrix(t(NNMF120.1$H)),y=as.matrix(t(NNMF120.2$H)),ci=FALSE)
+r13<-psych::corr.test(x=as.matrix(t(NNMF120.1$H)),y=as.matrix(t(NNMF120.3$H)),ci=FALSE)
+
+max_r12<-apply(r12$r,1,function(m){max<-c(); max<-c(max,max(m)); return(max)})
+max_r12_index<-apply(r12$r,1,function(m){max<-c(); max<-which(m==max(m)); return(max)})
+names(max_r12)<-max_r12_index
+
+max_r13<-apply(r13$r,1,function(m){max<-c(); max<-c(max,max(m)); return(max)})
+max_r13_index<-apply(r13$r,1,function(m){max<-c(); max<-which(m==max(m)); return(max)})
+names(max_r13)<-max_r13_index
+
+s12<-which(max_r12>=0.90)
+s13<-which(max_r13>=0.90)
+s123<-intersect(s12,s13)
+
+allzero<-which(colSums(NNMF120.1$H[s123,])==0)
+```
+
+
+
+
+```{r}
+## geometry data
+xlim=c(0,max(coord_annotation_dev_v3_left))
+ylim=xlim
+zlim=ylim
+
+#### NNMF
+open3d()
+
+par3d(windowRect = c(20, 30, 1200, 1200))
+
+n<-20
+
+mat <- matrix(1:n,nrow=4)
+
+layout3d(mat, sharedMouse = TRUE)
+
+for (i in 101:120) {
+
+    next3d()
+
+    plot3d(coord_annotation_dev_v3_left,col=myColorRamp(inferno(100),NNMF120.1$H[i,]),size=3,box=F,axes=F,xlab="",ylab="",zlab="",xlim=xlim,ylim=ylim,zlim=zlim, main=i, alpha=(NNMF120.1$H[i,]-min(NNMF120.1$H[i,]))/(max(NNMF120.1$H[i,])-min(NNMF120.1$H[i,])))
+}
+
+
+### CoGAPS
+open3d()
+
+par3d(windowRect = c(20, 30, 1200, 1200))
+
+n<-20
+
+mat <- matrix(1:n,nrow=4)
+
+layout3d(mat, sharedMouse = TRUE)
+
+for (i in 1:20) {
+
+    next3d()
+
+    plot3d(coord_annotation_dev_v3_left,col=myColorRamp(inferno(100),lognorm_Cogaps_80@sampleFactors[,i]),size=3,box=F,axes=F,xlab="",ylab="",zlab="",xlim=xlim,ylim=ylim,zlim=zlim, main=i, alpha=(lognorm_Cogaps_80@sampleFactors[,i]-min(lognorm_Cogaps_80@sampleFactors[,i]))/(max(lognorm_Cogaps_80@sampleFactors[,i])-min(lognorm_Cogaps_80@sampleFactors[,i])))
+}
+
+
+### pattern gif
+par3d(windowRect = c(20, 30, 1200, 1200))
+plot3d(coord_annotation_dev_v3_left,col=myColorRamp(inferno(100),NNMF120.1$H[1,]),size=3,box=F,axes=F,xlab="",ylab="",zlab="",xlim=xlim,ylim=ylim,zlim=zlim, main=1, alpha=(NNMF120.1$H[1,]-min(NNMF120.1$H[1,]))/(max(NNMF120.1$H[1,])-min(NNMF120.1$H[1,])))
+movie3d(spin3d(axis = c(1, 1, 1), rpm = 5),duration = 10,movie = paste0("NNMF120",".1","Pattern", as.character(1)),dir = "/Users/25149/Documents/JHU/Rotation/Dr.Goff/new_dev_v3/conserved pattern/lognorm_NNMF/plots", convert= NULL)
+while (rgl.cur() > 0) {
+            rgl.close()
+      }
+```
+
+
+```{r}
+## read in normalized data -visual cortex
+projected_data_norm<-read.csv("/Users/25149/Documents/JHU/Rotation/Dr.Goff/projection/visual cortex/GSE71585_RefSeq_TPM.csv")
+visual_genes<-projected_data_norm[,1]
+names(visual_genes)<-NULL
+projected_data_norm<-data.matrix(projected_data_norm[,-1])
+rownames(projected_data_norm)<-visual_genes
+
+## projectR-NNMF
+visual_projection<-projectR(projected_data_norm,loadings = NNMF120.1$W[,s123],full=TRUE)
+
+## poltting random cell-NNMF
+random_cell<-sample(1:ncol(visual_projection$projection),1)
+random_cell_name<-colnames(visual_projection$projection)[random_cell]
+
+open3d()
+par3d(windowRect = c(20, 30, 1200, 1200))
+cor<-cor(NNMF40.1$H[s123,-allzero],visual_projection$projection[,random_cell])
+plot3d(coord_annotation_dev_v3_left[-allzero,],col=myColorRamp(inferno(100),cor),size=3,box=F,axes=F,xlab="",ylab="",zlab="",xlim=xlim,ylim=ylim,zlim=zlim, main=random_cell_name, alpha=(cor-min(cor))/(max(cor)-min(cor)))
+
+bgplot3d( suppressWarnings (fields::image.plot( legend.only=TRUE, nlevel=100,zlim=c(min(cor),max(cor)), legend.args=list(text=''),col=inferno(100))))
+
+
+## projectR-CoGAPS
+
+visual_projection<-projectR(projected_data_norm,loadings = Cogaps@featureLoadings,full=TRUE)
+
+## poltting random cell-CoGAPS
+random_cell<-sample(1:ncol(visual_projection$projection),1)
+random_cell_name<-colnames(visual_projection$projection)[random_cell]
+
+open3d()
+par3d(windowRect = c(20, 30, 1200, 1200))
+cor<-cor(t(Cogaps@sampleFactors),visual_projection$projection[,random_cell])
+plot3d(coord_annotation_dev_v3_left,col=myColorRamp(inferno(100),cor),size=3,box=F,axes=F,xlab="",ylab="",zlab="",xlim=xlim,ylim=ylim,zlim=zlim, main=random_cell_name, alpha=(cor-min(cor))/(max(cor)-min(cor)))
+
+bgplot3d( suppressWarnings (fields::image.plot( legend.only=TRUE, nlevel=100,zlim=c(min(cor),max(cor)), legend.args=list(text=''),col=inferno(100))))
+
+e.vc<-EvaluateProjection(visual_projection$projection,t(Cogaps@sampleFactors),group,allzero = c())
+summary(as.factor(e.vc))
+```
+
+
+```{r}
+## load stratium data
+stratium<-read.csv(file = "/Users/25149/Documents/JHU/Rotation/Dr.Goff/projection/stratium/GSE82187_cast_all_forGEO.csv")
+stratium_genes<-colnames(stratium)[-(1:5)]
+stratium<-t(stratium[,-(1:5)])%>%as.matrix()
+
+##projectR-NNMF
+stratium_projection<-projectR(stratium,loadings=NNMF120.1$W[,s123],full=TRUE)
+
+## plotting random cell-NNMF
+random_cell<-sample(1:ncol(stratium_projection$projection),1)
+random_cell_name<-colnames(stratium_projection$projection)[random_cell]
+
+open3d()
+par3d(windowRect = c(20, 30, 1200, 1200))
+cor<-cor(NNMF40.1$H[s123,-allzero],stratium_projection$projection[,random_cell])
+plot3d(coord_annotation_dev_v3_left[-allzero,],col=myColorRamp(inferno(100),cor),size=3,box=F,axes=F,xlab="",ylab="",zlab="",xlim=xlim,ylim=ylim,zlim=zlim, main=random_cell_name,alpha=(cor-min(cor))/(max(cor)-min(cor)))
+
+bgplot3d( suppressWarnings (fields::image.plot( legend.only=TRUE, nlevel=100,zlim=c(min(cor(NNMF100.1$H[bp,],stratium_projection$projection[,random_cell])),max(cor(NNMF100.1$H[bp,],stratium_projection$projection[,random_cell]))), legend.args=list(text=''),col=inferno(100))))
+
+##projectR-CoGAPS
+stratium_projection<-projectR(stratium,loadings=Cogaps@featureLoadings,full=TRUE)
+
+## plotting random cell-CoGAPS
+random_cell<-sample(1:ncol(stratium_projection$projection),1)
+random_cell_name<-colnames(stratium_projection$projection)[random_cell]
+
+open3d()
+par3d(windowRect = c(20, 30, 1200, 1200))
+cor<-cor(t(Cogaps@sampleFactors),stratium_projection$projection[,random_cell])
+plot3d(coord_annotation_dev_v3_left,col=myColorRamp(inferno(100),cor),size=3,box=F,axes=F,xlab="",ylab="",zlab="",xlim=xlim,ylim=ylim,zlim=zlim, main=random_cell_name,alpha=(cor-min(cor))/(max(cor)-min(cor)))
+
+bgplot3d( suppressWarnings (fields::image.plot( legend.only=TRUE, nlevel=100,zlim=c(min(cor),max(cor)), legend.args=list(text=''),col=inferno(100))))
+
+e.str<-EvaluateProjection(stratium_projection$projection,t(Cogaps@sampleFactors),group,allzero = c())
+summary(as.factor(e.str))
+
+
+```
+
+
+```{r}
+### load hypothalamus data
+load("/Users/25149/Documents/JHU/Rotation/Dr.Goff/projection/hypothalamus/GSE87544_1443737Cells.Expresssion.Matrix.log_tpm+1_.renamed.RData/GSE87544_1443737Cells.Expresssion.Matrix.log_tpm+1_.renamed.RData")
+cell_names<-colnames(Expresssion_Matrix_unfiltered)
+Expression_B1<- Expresssion_Matrix_unfiltered[,which(grepl("B1",cell_names))]
+cell_names<-colnames(Expression_B1)
+Expression_B1_Normal<-Expression_B1[,which(grepl("Normal",cell_names))]
+Expression_B1_Normal<-as.matrix(Expression_B1_Normal)
+
+## projectR
+hypothalamus_projection<-projectR(Expression_B1_Normal,loadings = NNMF120.1$W[,s123],full=TRUE)
+
+## plotting random cell
+random_cell<-sample(1:ncol(hypothalamus_projection$projection),1)
+random_cell_name<-colnames(hypothalamus_projection$projection)[random_cell]
+
+open3d()
+par3d(windowRect = c(20, 30, 1200, 1200))
+cor<-cor(NNMF120.1$H[s123,],hypothalamus_projection$projection[,random_cell])
+plot3d(coord_annotation_dev_v3_left,col=myColorRamp(inferno(100),cor),size=3,box=F,axes=F,xlab="",ylab="",zlab="",xlim=xlim,ylim=ylim,zlim=zlim, main=random_cell_name,alpha=(cor-min(cor))/(max(cor)-min(cor)))
+
+bgplot3d( suppressWarnings (fields::image.plot( legend.only=TRUE, nlevel=100,zlim=c(min(cor(NNMF40.1$H,hypothalamus_projection$projection[,random_cell])),max(cor(NNMF40.1$H,hypothalamus_projection$projection[,random_cell]))), legend.args=list(text=''),col=inferno(100))))
+
+## projectR
+hypothalamus_projection<-projectR(Expression_B1_Normal,loadings = Cogaps@featureLoadings,full=TRUE)
+
+## plotting random cell
+random_cell<-sample(1:ncol(hypothalamus_projection$projection),1)
+random_cell_name<-colnames(hypothalamus_projection$projection)[random_cell]
+
+open3d()
+par3d(windowRect = c(20, 30, 1200, 1200))
+cor<-cor(t(Cogaps@sampleFactors),hypothalamus_projection$projection[,random_cell])
+plot3d(coord_annotation_dev_v3_left,col=myColorRamp(inferno(100),cor),size=3,box=F,axes=F,xlab="",ylab="",zlab="",xlim=xlim,ylim=ylim,zlim=zlim, main=random_cell_name,alpha=(cor-min(cor))/(max(cor)-min(cor)))
+
+bgplot3d( suppressWarnings (fields::image.plot( legend.only=TRUE, nlevel=100,zlim=c(min(cor),max(cor)), legend.args=list(text=''),col=inferno(100))))
+
+##
+e.hyp<-EvaluateProjection(hypothalamus_projection$projection,t(Cogaps@sampleFactors),group,allzero = c())
+summary(as.factor(e.hyp))
+```
+
+
+```{r}
+## import hindbrain data
+library(Seurat)
+hind<-Read10X(data.dir = "/Users/25149/Documents/JHU/Rotation/Dr.Goff/projection/cerebellum/")
+hind.s<- CreateSeuratObject(counts = hind, project = "hindsvm", min.cells = 3, min.features = 200)
+hind.s<- NormalizeData(hind.s, normalization.method = "LogNormalize", scale.factor = 500)
+hind<-as.matrix(hind.s@assays$RNA@data)
+
+
+## projectR
+hind_projection<-projectR(hind,loadings = NNMF120.1$W[,s123], full=TRUE)
+
+## plotting random cell
+random_cell<-sample(1:ncol(hind_projection$projection),1)
+random_cell_name<-colnames(hind_projection$projection)[random_cell]
+
+open3d()
+par3d(windowRect = c(20, 30, 1200, 1200))
+cor<-cor(NNMF120.1$H[s123,],hind_projection$projection[,random_cell])
+plot3d(coord_annotation_dev_v3_left,col=myColorRamp(inferno(100),cor),size=3,box=F,axes=F,xlab="",ylab="",zlab="",xlim=xlim,ylim=ylim,zlim=zlim, main=random_cell_name,alpha=(cor-min(cor))/(max(cor)-min(cor)))
+
+bgplot3d( suppressWarnings (fields::image.plot( legend.only=TRUE, nlevel=100,zlim=c(min(cor(NNMF40.1$H,hind_projection$projection[,random_cell])),max(cor(NNMF40.1$H,hind_projection$projection[,random_cell]))), legend.args=list(text=''),col=inferno(100))))
+
+## projectR
+hind_projection<-projectR(hind,loadings = Cogaps@featureLoadings, full=TRUE)
+
+## plotting random cell
+random_cell<-sample(1:ncol(hind_projection$projection),1)
+random_cell_name<-colnames(hind_projection$projection)[random_cell]
+
+open3d()
+par3d(windowRect = c(20, 30, 1200, 1200))
+cor<-cor(t(Cogaps@sampleFactors),hind_projection$projection[,random_cell])
+plot3d(coord_annotation_dev_v3_left,col=myColorRamp(inferno(100),cor),size=3,box=F,axes=F,xlab="",ylab="",zlab="",xlim=xlim,ylim=ylim,zlim=zlim, main=random_cell_name,alpha=(cor-min(cor))/(max(cor)-min(cor)))
+
+bgplot3d( suppressWarnings (fields::image.plot( legend.only=TRUE, nlevel=100,zlim=c(min(cor),max(cor)), legend.args=list(text=''),col=inferno(100))))
+
+##
+e.hin<-EvaluateProjection(hind_projection$projection,t(Cogaps@sampleFactors),group,allzero = c())
+summary(as.factor(e.hin))
+```
+
+
+
+```{r}
+### SVM using patterns.
+
+### common part
+library(brainmapr)
+library(e1071)
+
+load("/Users/25149/Documents/JHU/Rotation/Dr.Goff/brainmapr/structureID.RData")
+load("/Users/25149/Documents/JHU/Rotation/Dr.Goff/new_dev_v3/p56_dev_structureID_left.RData")
+
+## POTel preoptic telencephalon
+POTel<-getId(structureID,"preoptic telencephalon")
+POTel_children<-getChildren(structureID, POTel)
+
+## THy terminal hypothalamus (rostral hypothalamus)
+THy<-getId(structureID, "terminal hypothalamus (rostral hypothalamus)")
+THy_children<-getChildren(structureID, THy)
+
+##TelR roof plate of evaginated telencephalic vesicle
+TelR<-getId(structureID, "roof plate of evaginated telencephalic vesicle")
+TelR_children<-getChildren(structureID, TelR)
+
+## SPall subpallium
+SPall<-getId(structureID,"subpallium")
+SPall_children<-getChildren(structureID, SPall)
+
+
+## Pall pallium
+Pall<-getId(structureID,"pallium")
+Pall_children<-getChildren(structureID, Pall)
+
+## TelH telencephalo-hyphothalamic transition area
+TelH<-getId(structureID,"telencephalo-hypothalamic transition area")
+TelH_children<-getChildren(structureID,TelH)
+
+
+## PHy peduncular (caudal) hypothalamus
+PHy<-getId(structureID,"peduncular (caudal) hypothalamus")
+PHy_children<-getChildren(structureID, PHy)
+
+##D diencephalon
+D_id<-getId(structureID,"diencephalon")
+Dchildren_id<-getChildren(structureID,D_id)
+
+##M midbrain
+M_id<-getId(structureID,"midbrain")
+Mchildren_id<-getChildren(structureID,M_id)
+
+## PPH prepontine hindbrain
+PPH<-getId(structureID,"prepontine hindbrain")
+PPH_children<-getChildren(structureID,PPH)
+
+## PH pontine hindbrain
+PH<-getId(structureID,"pontine hindbrain")
+PH_children<-getChildren(structureID, PH)
+
+## PMH pontomedullary hindbrain
+PMH<-getId(structureID,"pontomedullary hindbrain")
+PMH_children<-getChildren(structureID, PMH)
+
+## MH medullary hindbrain (medulla)
+MH<-getId(structureID,"medullary hindbrain (medulla)")
+MH_children<-getChildren(structureID, MH)
+
+##SpC spinal cord
+SpC<-getId(structureID,"spinal cord")
+SpC_children<-getChildren(structureID,SpC)
+
+##tracts landmark tracts
+tracts<-getId(structureID,"landmark tracts")
+tracts_children<-getChildren(structureID,tracts)
+
+##ventricles ventricles, neural plate
+ventricles<-getId(structureID,"ventricles, neural plate")
+ventricles_children<-getChildren(structureID,ventricles)
+
+coord_ID_POTel<-which(p56_dev_structureID_left%in%c(POTel_children,POTel))
+coord_ID_THy<-which(p56_dev_structureID_left%in%c(THy_children,THy))
+coord_ID_TelR<-which(p56_dev_structureID_left%in%c(TelR_children,TelR))
+coord_ID_SPall<-which(p56_dev_structureID_left%in%c(SPall_children,SPall))
+coord_ID_Pall<-which(p56_dev_structureID_left%in%c(Pall_children,Pall))
+coord_ID_TelH<-which(p56_dev_structureID_left%in%c(TelH_children,TelH))
+coord_ID_PHy<-which(p56_dev_structureID_left%in%c(PHy_children,PHy))
+coord_ID_D<-which(p56_dev_structureID_left%in%c(Dchildren_id,D_id))
+coord_ID_M<-which(p56_dev_structureID_left%in%c(Mchildren_id,M_id))
+coord_ID_PPH<-which(p56_dev_structureID_left%in%c(PPH_children,PPH))
+coord_ID_PH<-which(p56_dev_structureID_left%in%c(PH_children,PH))
+coord_ID_PMH<-which(p56_dev_structureID_left%in%c(PMH_children,PMH))
+coord_ID_MH<-which(p56_dev_structureID_left%in%c(MH_children,MH))
+coord_ID_SpC<-which(p56_dev_structureID_left%in%c(SpC_children,SpC))
+coord_ID_tracts<-which(p56_dev_structureID_left%in%c(tracts_children,tracts))
+coord_ID_ventricles<-which(p56_dev_structureID_left%in%c(ventricles_children,ventricles))
+
+#### grouping factor
+group<-c(rep(NA,30064))
+group[coord_ID_POTel]<-"POTel"
+group[coord_ID_THy]<-"THy"
+group[coord_ID_TelR]<-"TelR"
+group[coord_ID_SPall]<-"SPall"
+group[coord_ID_Pall]<-"Pall"
+group[coord_ID_TelH]<-"TelH"
+group[coord_ID_PHy]<-"PHy"
+group[coord_ID_D]<-"D"
+group[coord_ID_M]<-"M"
+group[coord_ID_PPH]<-"PPH"
+group[coord_ID_PH]<-"PH"
+group[coord_ID_PMH]<-"PMH"
+group[coord_ID_MH]<-"MH"
+group[coord_ID_SpC]<-"SpC"
+group[coord_ID_tracts]<-"tracts"
+group[coord_ID_ventricles]<-"ventricles"
+group<-as.factor(group)
+
+### SVM training and testting dataset
+# NNMF40.1  patterns: 1 2 5 6 7 11 17 18 20 22 23 28 29 30 31 33 36 37 39 40
+cp<-c(1, 2, 5, 6, 7, 11, 17, 18, 20, 22, 23, 28, 29, 30, 31, 33, 36, 37, 39, 40)
+Dat<-as.data.frame(t(NNMF120.1$H[s123,]))%>%cbind(group)
+Dat<-filter(Dat,!is.na(group))
+
+# 1) training dataset
+set.seed(520)
+D_train<-sample(which(Dat$group == "D"),1634)
+M_train<-sample(which(Dat$group == "M"),918)
+MH_train<-sample(which(Dat$group == "MH"),845)
+Pall_train<-sample(which(Dat$group == "Pall"),9306)
+PH_train<-sample(which(Dat$group == "PH"),405)
+PHy_train<-sample(which(Dat$group == "PHy"),272)
+PMH_train<-sample(which(Dat$group == "PMH"),593)
+POTel_train<-sample(which(Dat$group == "POTel"),135)
+PPH_train<-sample(which(Dat$group == "PPH"),3576)
+SPall_train<-sample(which(Dat$group == "SPall"),2287)
+THy_train<-sample(which(Dat$group == "THy"),235)
+trainingindex<-c(D_train,M_train,MH_train,Pall_train,PH_train,PHy_train,PMH_train,POTel_train,PPH_train,SPall_train,THy_train)
+trainingset<-Dat[trainingindex,]
+
+# 2)testting dataset
+testingset<-Dat[-trainingindex,]
+
+### fitting model
+model<-svm(trainingset$group~., data = trainingset, cost = 10,cross=10)
+
+### testing on testing dataset
+p<-predict(model, testingset)
+table(p,testingset$group)
+t(t(table(p,testingset$group))/colSums(table(p,testingset$group)))
+
+### prediction on stratium
+stratium_projection<-projectR(stratium,loadings=NNMF120.1$W[,s123],full=TRUE)
+stratiumforpred<-t(stratium_projection$projection)%>%as.data.frame()
+colnames(stratiumforpred)<-colnames(Dat)[1:55]
+p<-predict(model,stratiumforpred)
+table(p)
+
+### prediction on visual cortex
+visual_projection<-projectR(projected_data_norm,loadings = NNMF120.1$W[,s123],full=TRUE)
+visualforpred<-t(visual_projection$projection)%>%as.data.frame()
+colnames(visualforpred)<-colnames(Dat)[1:55]
+p<-predict(model,visualforpred)
+table(p)
+```
+
