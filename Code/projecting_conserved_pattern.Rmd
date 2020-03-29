@@ -14,6 +14,8 @@ library(magick)
 library(plotrix)
 library(viridisLite)
 library(e1071)
+source("./code/EvaluateProjection.R")
+source("./code/myColorRamp.R")
 ```
 
 ```{r }
