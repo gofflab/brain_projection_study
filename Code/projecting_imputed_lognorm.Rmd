@@ -22,7 +22,7 @@ source("./code/imputation.R")
 load("/Users/25149/Documents/JHU/Rotation/Dr.Goff/new_dev_v3/p56coord_dev_v3_left.RData")
 load("/Users/25149/Documents/JHU/Rotation/Dr.Goff/new_dev_v3/EnergyMatrix/energy_dev_v3_sagittal.RData")
 energy.annot<-energy.mat[,coordID_annotation_dev_v3_left]
-energy_imputed<-imputationEnergy(energy.annot, p56coord_dev_v3_left, maxdistance=2.5)
+energy_imputed<-imputationEnergy(energy.annot, coordID_annotation_dev_v3_left, maxdistance=2.5)
 energy_imputed_lognorm<-Lognormalize(energy_imputed)
 ```
 # CoGAPS
