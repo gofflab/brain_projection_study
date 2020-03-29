@@ -19,7 +19,7 @@ source("./code/imputation.R")
 ```
 # impute original energy matrix
 ```{r }
-load("/Users/25149/Documents/JHU/Rotation/Dr.Goff/new_dev_v3/p56coord_dev_v3_left.RData")
+load("./Data/p56coord_dev_v3_left.RData")
 load("/Users/25149/Documents/JHU/Rotation/Dr.Goff/new_dev_v3/EnergyMatrix/energy_dev_v3_sagittal.RData")
 energy.annot<-energy.mat[,coordID_annotation_dev_v3_left]
 energy_imputed<-imputationEnergy(energy.annot, coordID_annotation_dev_v3_left, maxdistance=2.5)
@@ -34,7 +34,7 @@ Energy_imputed_lognorm_CoGAPS120<-CoGAPS(energy_imputed_lognorm,params,nIteratio
 
 ```{r }
 load("/Users/25149/Documents/JHU/Rotation/Dr.Goff/new_dev_v3/imputation/CoGAPS_Lognorm/Energy_imputed_lognorm_CoGAPS120.RData")
-load("/Users/25149/Documents/JHU/Rotation/Dr.Goff/new_dev_v3/conserved pattern/group.RData")
+load("./Data/group.RData")
 
 xlim=c(0,max(coord_annotation_dev_v3_left))
 ylim=xlim
