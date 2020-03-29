@@ -18,10 +18,9 @@ library(e1071)
 
 ```{r }
 load("/Users/25149/Documents/JHU/Rotation/Dr.Goff/new_dev_v3/EnergyMatrix/energy_dev_v3_sagittal.RData")
-load("/Users/25149/Documents/JHU/Rotation/Dr.Goff/new_dev_v3/p56coord_dev_v3_left.RData")
+load("./Data/p56coord_dev_v3_left.RData")
 energy.annot<-energy.mat[,coordID_annotation_dev_v3_left]
-#energy.annot[energy.annot==-1]<-0
-#energy.log<-log10(energy.annot+1)
+energy.annot[energy.annot==-1]<-0
 energy.lognorm<-LogNormalize(energy.annot)%>%as.matrix()
 ```
 
@@ -294,8 +293,8 @@ summary(as.factor(e.hin))
 library(brainmapr)
 library(e1071)
 
-load("/Users/25149/Documents/JHU/Rotation/Dr.Goff/brainmapr/structureID.RData")
-load("/Users/25149/Documents/JHU/Rotation/Dr.Goff/new_dev_v3/p56_dev_structureID_left.RData")
+load("./Data/structureID.RData")
+load("./Data/p56_dev_structureID_left.RData")
 
 ## POTel preoptic telencephalon
 POTel<-getId(structureID,"preoptic telencephalon")
@@ -401,8 +400,6 @@ group[coord_ID_ventricles]<-"ventricles"
 group<-as.factor(group)
 
 ### SVM training and testting dataset
-# NNMF40.1  patterns: 1 2 5 6 7 11 17 18 20 22 23 28 29 30 31 33 36 37 39 40
-cp<-c(1, 2, 5, 6, 7, 11, 17, 18, 20, 22, 23, 28, 29, 30, 31, 33, 36, 37, 39, 40)
 Dat<-as.data.frame(t(NNMF120.1$H[s123,]))%>%cbind(group)
 Dat<-filter(Dat,!is.na(group))
 
