@@ -15,9 +15,21 @@ library(plotrix)
 library(viridisLite)
 source("./code/EvaluateProjection.R")
 source("./code/myColorRamp.R")
+source("./code/imputation.R")
 ```
+# impute original energy matrix
 ```{r }
 load("/Users/25149/Documents/JHU/Rotation/Dr.Goff/new_dev_v3/p56coord_dev_v3_left.RData")
+load("/Users/25149/Documents/JHU/Rotation/Dr.Goff/new_dev_v3/EnergyMatrix/energy_dev_v3_sagittal.RData")
+energy.annot<-energy.mat[,coordID_annotation_dev_v3_left]
+energy_imputed<-imputationEnergy(energy.annot, p56coord_dev_v3_left, maxdistance=2.5)
+energy_imputed_lognorm<-Lognormalize(energy_imputed)
+```
+# CoGAPS
+```{r }
+params<-new("CogapsParams")
+params<-setParam(params,"nPatterns",120)
+Energy_imputed_lognorm_CoGAPS120<-CoGAPS(energy_imputed_lognorm,params,nIterations=1000)
 ```
 
 ```{r }
@@ -54,7 +66,7 @@ plot3d(coord_annotation_dev_v3_left,col=myColorRamp(inferno(100),cor),size=3,box
 bgplot3d( suppressWarnings (fields::image.plot( legend.only=TRUE, nlevel=100,zlim=c(min(cor),max(cor)), legend.args=list(text=''),col=inferno(100))))
 
 ## Evaluation
-e1<-EvaluateProjection(visual_projection$projection,t(Energy_imputed_lognorm_CoGAPS120@sampleFactors),group,allzero = c())
+e.cor<-EvaluateProjection(visual_projection$projection,t(Energy_imputed_lognorm_CoGAPS120@sampleFactors),group,allzero = c())
 summary(as.factor(e1))
 ```
 
@@ -133,17 +145,7 @@ plot3d(coord_annotation_dev_v3_left,col=myColorRamp(inferno(100),cor),size=3,box
 
 bgplot3d( suppressWarnings (fields::image.plot( legend.only=TRUE, nlevel=100,zlim=c(min(cor),max(cor)), legend.args=list(text=''),col=inferno(100))))
 
-##
+## 
 e.hin<-EvaluateProjection(hind_projection$projection,t(Energy_imputed_lognorm_CoGAPS120@sampleFactors),group,allzero = c())
 summary(as.factor(e.hin))
 ```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
